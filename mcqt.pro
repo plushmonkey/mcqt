@@ -35,6 +35,8 @@ DEFINES += PDC_WIDE \
 QMAKE_CXXFLAGS_RELEASE += /MD
 QMAKE_CXXFLAGS_DEBUG += /MDd
 
+win32:RC_ICONS += icons/mcqt256.ico icons/mcqt128.ico icons/mcqt64.ico icons/mcqt32.ico icons/mcqt16.ico
+
 INCLUDEPATH += $$PWD/lib/mclib
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/lib/mclib/Release/ -lmclib
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/lib/mclib/Debug/ -lmclibd

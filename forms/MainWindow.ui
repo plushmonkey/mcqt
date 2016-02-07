@@ -309,6 +309,9 @@
               <pointsize>10</pointsize>
              </font>
             </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
             <property name="maxLength">
              <number>100</number>
             </property>
