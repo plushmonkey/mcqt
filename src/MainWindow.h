@@ -11,6 +11,32 @@ class MainWindow;
 
 class MainWindow;
 
+class CircleMover : public QObject, public Minecraft::PlayerListener, public ClientListener {
+    Q_OBJECT
+
+signals:
+    void chatMessage(QString str);
+
+private:
+    Minecraft::PlayerManager* m_PlayerManager;
+    PlayerController* m_PlayerController;
+    bool m_InWorld;
+    s64 m_LastUpdate;
+    s64 m_StartTime;
+    Vector3d m_BasePosition;
+
+public:
+    CircleMover(Minecraft::PlayerManager* pm, PlayerController* pc, MainWindow* mw);
+
+    ~CircleMover();
+
+    void OnClientSpawn(Minecraft::PlayerPtr player);
+
+    void OnTick();
+
+    void Update();
+};
+
 class ChatHandler : public QObject, public Minecraft::Packets::PacketHandler {
     Q_OBJECT
 

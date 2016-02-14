@@ -2,6 +2,12 @@
 #include "ui_mainwindow.h"
 #include <QMessageBox>
 #include "SettingsDialog.h"
+#include <chrono>
+#include <sstream>
+
+s64 GetTime() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
 
 ChatHandler::ChatHandler(Minecraft::Packets::PacketDispatcher* dispatcher, MainWindow *main)
     : Minecraft::Packets::PacketHandler(dispatcher), m_Main(main)
@@ -54,6 +60,59 @@ void StatusHandler::HandlePacket(Minecraft::Packets::Inbound::DisconnectPacket* 
     emit statusUpdate(message);
 }
 
+#include <fstream>
+
+Console console;
+
+CircleMover::CircleMover(Minecraft::PlayerManager* pm, PlayerController* pc, MainWindow* mw)
+    : m_PlayerManager(pm), m_PlayerController(pc), m_InWorld(false), m_LastUpdate(GetTime()), m_StartTime(GetTime())
+{
+    pm->RegisterListener(this);
+    connect(this, SIGNAL(chatMessage(QString)), mw, SLOT(appendChat(QString)));
+
+    pc->SetHandleFall(false);
+}
+
+CircleMover::~CircleMover() {
+    m_PlayerManager->UnregisterListener(this);
+}
+
+void CircleMover::OnClientSpawn(Minecraft::PlayerPtr player) {
+    m_InWorld = true;
+    m_BasePosition = player->GetEntity()->GetPosition();
+}
+
+void CircleMover::OnTick() {
+    Update();
+}
+
+void CircleMover::Update() {
+    if (!m_InWorld) return;
+
+    s64 time = GetTime();
+    float dt = (time - m_LastUpdate) / 1000.0f;
+    m_LastUpdate = time;
+
+    Vector3d position = m_PlayerController->GetPosition();
+
+    float radius = 2.5f;
+    float loopDuration = 3.0f; // secs
+    float scale = 3.14159f * 2.0f / loopDuration;
+    float curr = fmodf((time - m_StartTime) / 1000.0f, loopDuration);
+
+    Vector3d newPosition = m_BasePosition + Vector3d(0, radius, 0);
+    newPosition += Vector3d(0, sinf(curr * scale) * radius, cosf(curr * scale) * radius);
+
+    //std::stringstream ss;
+    //ss << "pos: " << position << " newPos: " << newPosition;
+    //console << ss.str();
+    //emit chatMessage(QString::fromStdString(ss.str()));
+
+    m_PlayerController->Move(newPosition - position);
+}
+
+CircleMover* mover = nullptr;
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -64,6 +123,10 @@ MainWindow::MainWindow(QWidget *parent) :
     m_Client = new Client(&m_Dispatcher);
     m_Client->GetPlayerManager()->RegisterListener(&m_PlayerListModel);
     m_Client->GetConnection()->RegisterListener(this);
+
+    //console.SetImpl(new LoggerConsole("test.log"));
+    //mover = new CircleMover(m_Client->GetPlayerManager(), m_Client->GetPlayerController(), this);
+    //m_Client->RegisterListener(mover);
 
     m_ChatHandler = new ChatHandler(&m_Dispatcher, this);
     m_StatusHandler = new StatusHandler(&m_Dispatcher, this);
@@ -83,6 +146,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    //m_Client->UnregisterListener(mover);
+    //delete mover;
     m_Client->GetPlayerManager()->UnregisterListener(&m_PlayerListModel);
     m_Client->GetConnection()->UnregisterListener(this);
     delete m_ChatHandler;

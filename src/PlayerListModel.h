@@ -3,6 +3,7 @@
 
 #include <QAbstractListModel>
 #include <QVector>
+#include <mutex>
 #include "mclib/PlayerManager.h"
 
 class PlayerListModel : public QAbstractListModel, public Minecraft::PlayerListener {
@@ -19,6 +20,7 @@ public:
 
 private:
     QVector<QString> m_Players;
+    mutable std::recursive_mutex m_Mutex;
 };
 
 #endif // PLAYERLISTMODEL
