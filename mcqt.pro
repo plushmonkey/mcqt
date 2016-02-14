@@ -15,11 +15,13 @@ TEMPLATE = app
 SOURCES += src/main.cpp\
         src/MainWindow.cpp \
         src/PlayerListModel.cpp \
-        src/SettingsDialog.cpp
+        src/SettingsDialog.cpp \
+    src/Settings.cpp
 
 HEADERS  += src/MainWindow.h \
             src/PlayerListModel.h \
-            src/SettingsDialog.h
+            src/SettingsDialog.h \
+    src/Settings.h
 
 FORMS    += forms/MainWindow.ui \
             forms/SettingsDialog.ui
@@ -43,6 +45,6 @@ else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/lib/mclib/Debug/ -lmcli
 else:unix: LIBS += -L$$PWD/lib/mclib/Release/ -lmclib
 
 INCLUDEPATH += $$PWD/lib/jsoncpp/include
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/lib/jsoncpp/lib/ -ljsoncpp-MT
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/lib/jsoncpp/lib/ -ljsoncpp-MDd
-else:unix: LIBS += -ljsoncpp
+#win32:CONFIG(release, debug|release): LIBS += -L$$PWD/lib/jsoncpp/lib/ -ljsoncpp-MT
+#else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/lib/jsoncpp/lib/ -ljsoncpp-MDd
+#else:unix: LIBS += -ljsoncpp
