@@ -1,5 +1,5 @@
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
+#include "MainWindow.h"
+#include "ui_MainWindow.h"
 #include <QMessageBox>
 #include "SettingsDialog.h"
 #include <chrono>
@@ -96,8 +96,8 @@ void CircleMover::Update() {
 
     Vector3d position = m_PlayerController->GetPosition();
 
-    float radius = 3.0f;
-    float loopDuration = 5.0f; // secs
+    float radius = 2.0f;
+    float loopDuration = 4.0f; // secs
     float scale = 3.14159f * 2.0f / loopDuration;
     float curr = fmodf((time - m_StartTime) / 1000.0f, loopDuration);
 
@@ -147,6 +147,12 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->passwordEdit->setFocus();
     }
 
+    QString server = Settings::GetInstance().GetServer();
+    if (!server.isEmpty())
+        ui->serverEdit->setText(server);
+    unsigned short port = Settings::GetInstance().GetPort();
+    if (port)
+        ui->portEdit->setText(QString::fromStdString(std::to_string(port)));
 
     QList<int> sizes = {500, 150};
     ui->splitter->setSizes(sizes);
@@ -183,9 +189,15 @@ void MainWindow::OnSocketStateChange(Network::Socket::Status newStatus) {
 
 void MainWindow::OnLogin(bool success) {
     if (success) {
+        Minecraft::Yggdrasil* yggdrasil = m_Client->GetConnection()->GetYggdrasil();
+        QString accessToken = QString::fromStdString(yggdrasil->GetAccessToken());
+        QString clientToken = QString::fromStdString(yggdrasil->GetClientToken());
+
+        Settings::GetInstance().SetAccessToken(accessToken);
+        Settings::GetInstance().SetClientToken(clientToken);
+
         emit changeStackedWidgetIndex(1);
         emit statusHide();
-        //ui->statusBar->hide();
     } else {
         ui->statusBar->showMessage("Failed to login");
         m_Client->GetConnection()->Disconnect();

@@ -2,6 +2,7 @@
 #define PLAYERLISTMODEL
 
 #include <QAbstractListModel>
+#include <QListView>
 #include <QVector>
 #include <mutex>
 #include "mclib/PlayerManager.h"
@@ -17,9 +18,13 @@ public:
 
     void OnPlayerJoin(Minecraft::PlayerPtr player);
     void OnPlayerLeave(Minecraft::PlayerPtr player);
+    void OnPlayerSpawn(Minecraft::PlayerPtr player);
+    void OnPlayerDestroy(Minecraft::PlayerPtr player, Minecraft::EntityId eid);
 
 private:
-    QVector<QString> m_Players;
+    void ForceRepaint();
+
+    QVector<Minecraft::PlayerPtr> m_Players;
     mutable std::recursive_mutex m_Mutex;
 };
 

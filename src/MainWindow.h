@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include "mclib/Client.h"
-#include "playerlistmodel.h"
+#include "PlayerListModel.h"
 
 namespace Ui {
 class MainWindow;

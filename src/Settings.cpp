@@ -7,7 +7,9 @@ namespace {
 QString SettingsFilename = "settings.json";
 }
 
-Settings::Settings() {
+Settings::Settings()
+    : m_Port(0)
+{
     m_Font = QFont("Segoe UI", 10);
     Load(SettingsFilename);
 }
@@ -42,8 +44,14 @@ bool Settings::Load(const QString& filename) {
 
     if (!root["username"].isNull())
         m_Username = QString::fromStdString(root["username"].asString());
+    if (!root["server"].isNull())
+        m_Server = QString::fromStdString(root["server"].asString());
+    if (!root["port"].isNull())
+        m_Port = (unsigned short)root["port"].asInt();
     if (!root["accessToken"].isNull())
         m_AccessToken = QString::fromStdString(root["accessToken"].asString());
+    if (!root["clientToken"].isNull())
+        m_ClientToken = QString::fromStdString(root["clientToken"].asString());
 
     return true;
 }
@@ -61,8 +69,14 @@ bool Settings::Save(const QString& filename) {
 
     if (!m_Username.isEmpty())
         root["username"] = m_Username.toStdString();
+    if (!m_Server.isEmpty())
+        root["server"] = m_Server.toStdString();
+    if (m_Port)
+        root["port"] = m_Port;
     if (!m_AccessToken.isEmpty())
         root["accessToken"] = m_AccessToken.toStdString();
+    if (!m_ClientToken.isEmpty())
+        root["clientToken"] = m_ClientToken.toStdString();
 
     Json::StyledWriter writer;
     std::string prettyPrint = writer.write(root);
