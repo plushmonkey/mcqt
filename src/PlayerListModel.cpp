@@ -24,6 +24,10 @@ void PlayerListModel::OnPlayerDestroy(Minecraft::PlayerPtr player, Minecraft::En
 void PlayerListModel::OnPlayerJoin(Minecraft::PlayerPtr player) {
     std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
+    std::wstring name = player->GetName();
+    if (name.find(L"?tab") != std::string::npos || name.empty())
+        return;
+
     beginInsertRows(QModelIndex(), m_Players.size(), m_Players.size());
     m_Players.push_back(player);
     endInsertRows();
@@ -60,8 +64,6 @@ QVariant PlayerListModel::data(const QModelIndex &index, int role) const {
         if (role == Qt::DisplayRole) {
             const std::wstring& name = player->GetName();
 
-            if (name.find(L"?tab") != std::wstring::npos)
-                return QVariant();
             return QString::fromStdWString(name);
         }
 
