@@ -1,9 +1,10 @@
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
+#include "MainWindow.h"
+#include "ui_MainWindow.h"
 #include <QMessageBox>
 #include "SettingsDialog.h"
 #include <chrono>
 #include <sstream>
+#include "Settings.h"
 
 s64 GetTime() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -95,15 +96,21 @@ void CircleMover::Update() {
 
     Vector3d position = m_PlayerController->GetPosition();
 
-    float radius = 2.5f;
-    float loopDuration = 3.0f; // secs
+    float radius = 2.0f;
+    float loopDuration = 4.0f; // secs
     float scale = 3.14159f * 2.0f / loopDuration;
     float curr = fmodf((time - m_StartTime) / 1000.0f, loopDuration);
 
     Vector3d newPosition = m_BasePosition + Vector3d(0, radius, 0);
-    newPosition += Vector3d(0, sinf(curr * scale) * radius, cosf(curr * scale) * radius);
+
+    float t = curr * scale;
+    float z = (16 * std::pow(sinf(t), 3)) / 16.0f;
+    float y = (13 * cosf(t) - 5 * cosf(2 * t) - 2 * cosf(3 * t) - cosf(4 * t)) / 16.0f;
+    //newPosition += Vector3d(0, sinf(curr * scale) * radius, cosf(curr * scale) * radius);
+    newPosition += Vector3d(0, y * radius + 0.5f, z * radius);
 
     //std::stringstream ss;
+    //ss << "z: " << z << " y: " << y;
     //ss << "pos: " << position << " newPos: " << newPosition;
     //console << ss.str();
     //emit chatMessage(QString::fromStdString(ss.str()));
@@ -132,6 +139,20 @@ MainWindow::MainWindow(QWidget *parent) :
     m_StatusHandler = new StatusHandler(&m_Dispatcher, this);
 
     ui->setupUi(this);
+
+    this->setFont(Settings::GetInstance().GetFont());
+    QString username = Settings::GetInstance().GetUsername();
+    if (!username.isEmpty()) {
+        ui->usernameEdit->setText(username);
+        ui->passwordEdit->setFocus();
+    }
+
+    QString server = Settings::GetInstance().GetServer();
+    if (!server.isEmpty())
+        ui->serverEdit->setText(server);
+    unsigned short port = Settings::GetInstance().GetPort();
+    if (port)
+        ui->portEdit->setText(QString::fromStdString(std::to_string(port)));
 
     QList<int> sizes = {500, 150};
     ui->splitter->setSizes(sizes);
@@ -168,9 +189,15 @@ void MainWindow::OnSocketStateChange(Network::Socket::Status newStatus) {
 
 void MainWindow::OnLogin(bool success) {
     if (success) {
+        Minecraft::Yggdrasil* yggdrasil = m_Client->GetConnection()->GetYggdrasil();
+        QString accessToken = QString::fromStdString(yggdrasil->GetAccessToken());
+        QString clientToken = QString::fromStdString(yggdrasil->GetClientToken());
+
+        Settings::GetInstance().SetAccessToken(accessToken);
+        Settings::GetInstance().SetClientToken(clientToken);
+
         emit changeStackedWidgetIndex(1);
         emit statusHide();
-        //ui->statusBar->hide();
     } else {
         ui->statusBar->showMessage("Failed to login");
         m_Client->GetConnection()->Disconnect();
@@ -188,10 +215,24 @@ void MainWindow::updateStatus(QString str) {
 
 void MainWindow::on_loginButton_clicked()
 {
+    Login();
+}
+
+void MainWindow::on_usernameEdit_returnPressed() {
+    Login();
+}
+
+void MainWindow::on_passwordEdit_returnPressed() {
+    Login();
+}
+
+void MainWindow::Login() {
     QString username = ui->usernameEdit->text();
     QString password = ui->passwordEdit->text();
     QString host = ui->serverEdit->text();
     QString port = ui->portEdit->text();
+
+    Settings::GetInstance().SetUsername(username);
 
     try {
         m_Client->Login(host.toStdString(), port.toShort(), username.toStdString(), password.toStdString());

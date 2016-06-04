@@ -15,7 +15,12 @@ public:
     explicit SettingsDialog(QWidget *parent = 0);
     ~SettingsDialog();
 
+private slots:
+    void on_fontButton_clicked();
+
 private:
+    void DisplayFont();
+
     Ui::SettingsDialog *ui;
 };
 

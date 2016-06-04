@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include "mclib/Client.h"
-#include "playerlistmodel.h"
+#include "PlayerListModel.h"
 
 namespace Ui {
 class MainWindow;
@@ -84,6 +84,9 @@ private slots:
     void on_loginButton_clicked();
     void on_settingsButton_clicked();
 
+    void on_usernameEdit_returnPressed();
+    void on_passwordEdit_returnPressed();
+
     void on_sendEdit_returnPressed();
 
 signals:
@@ -95,6 +98,8 @@ public slots:
     void updateStatus(QString str);
 
 private:
+    void Login();
+
     Client* m_Client;
     Minecraft::Packets::PacketDispatcher m_Dispatcher;
     PlayerListModel m_PlayerListModel;
