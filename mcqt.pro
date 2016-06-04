@@ -46,6 +46,5 @@ else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/lib/mclib/Debug/ -lmcli
 else:unix: LIBS += -L$$PWD/lib/mclib/ -lmc
 
 INCLUDEPATH += $$PWD/lib/jsoncpp/include
-#win32:CONFIG(release, debug|release): LIBS += -L$$PWD/lib/jsoncpp/lib/ -ljsoncpp-MT
 win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/lib/jsoncpp/lib/ -ljsoncpp-MDd
 #else:unix: LIBS += -ljsoncpp

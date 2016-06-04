@@ -59,6 +59,9 @@ QVariant PlayerListModel::data(const QModelIndex &index, int role) const {
 
         if (role == Qt::DisplayRole) {
             const std::wstring& name = player->GetName();
+
+            if (name.find(L"?tab") != std::wstring::npos)
+                return QVariant();
             return QString::fromStdWString(name);
         }
 
