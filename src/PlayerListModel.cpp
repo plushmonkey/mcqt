@@ -22,11 +22,16 @@ void PlayerListModel::OnPlayerDestroy(Minecraft::PlayerPtr player, Minecraft::En
 }
 
 void PlayerListModel::OnPlayerJoin(Minecraft::PlayerPtr player) {
+    static const std::vector<std::wstring> ignoreNames = {
+        L"?tab", L"BTLP Slot"
+    };
     std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
     std::wstring name = player->GetName();
-    if (name.find(L"?tab") != std::string::npos || name.empty())
-        return;
+    for (std::wstring ignoreName : ignoreNames) {
+        if (name.find(ignoreName) != std::string::npos || name.empty())
+            return;
+    }
 
     beginInsertRows(QModelIndex(), m_Players.size(), m_Players.size());
     m_Players.push_back(player);
