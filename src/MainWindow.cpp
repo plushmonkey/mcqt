@@ -127,9 +127,11 @@ MainWindow::MainWindow(QWidget *parent) :
     m_PlayerListModel(this),
     m_Client(nullptr)
 {
-    m_Client = new Client(&m_Dispatcher);
+    m_Client = new Client(&m_Dispatcher, Minecraft::Protocol::Version::Minecraft_1_10_2);
     m_Client->GetPlayerManager()->RegisterListener(&m_PlayerListModel);
     m_Client->GetConnection()->RegisterListener(this);
+
+    m_ForgeHandler = std::make_shared<Minecraft::Forge::ForgeHandler>(&m_Dispatcher, m_Client->GetConnection());
 
     //console.SetImpl(new LoggerConsole("test.log"));
     //mover = new CircleMover(m_Client->GetPlayerManager(), m_Client->GetPlayerController(), this);
@@ -193,8 +195,13 @@ void MainWindow::OnLogin(bool success) {
         QString accessToken = QString::fromStdString(yggdrasil->GetAccessToken());
         QString clientToken = QString::fromStdString(yggdrasil->GetClientToken());
 
+        std::string portStr = ui->portEdit->text().toStdString();
+        u16 port = (u16)strtol(portStr.c_str(), nullptr, 10);
+
         Settings::GetInstance().SetAccessToken(accessToken);
         Settings::GetInstance().SetClientToken(clientToken);
+        Settings::GetInstance().SetServer(ui->serverEdit->text());
+        Settings::GetInstance().SetPort(port);
 
         emit changeStackedWidgetIndex(1);
         emit statusHide();
@@ -233,6 +240,26 @@ void MainWindow::Login() {
     QString port = ui->portEdit->text();
 
     Settings::GetInstance().SetUsername(username);
+
+    {
+        Client pingClient(&m_Dispatcher, Minecraft::Protocol::Version::Minecraft_1_10_2);
+        try {
+            pingClient.Ping(host.toStdString(), port.toShort());
+        } catch (const std::exception& e) {
+            ui->statusBar->showMessage(QString(e.what()));
+            return;
+        }
+
+        u64 start = GetTime();
+
+        while (!m_ForgeHandler->HasModInfo()) {
+            if (GetTime() - start > 10000) {
+                ui->statusBar->showMessage(QString("Timed out."));
+                return;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    }
 
     try {
         m_Client->Login(host.toStdString(), port.toShort(), username.toStdString(), password.toStdString());

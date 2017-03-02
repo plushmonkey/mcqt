@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "mclib/Client.h"
+#include "mclib/Forge.h"
 #include "PlayerListModel.h"
 
 namespace Ui {
@@ -102,6 +103,7 @@ private:
 
     Client* m_Client;
     Minecraft::Packets::PacketDispatcher m_Dispatcher;
+    std::shared_ptr<Minecraft::Forge::ForgeHandler> m_ForgeHandler;
     PlayerListModel m_PlayerListModel;
     ChatHandler* m_ChatHandler;
     StatusHandler* m_StatusHandler;
