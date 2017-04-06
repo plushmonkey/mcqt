@@ -2,8 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "mclib/Client.h"
-#include "mclib/Forge.h"
+#include <mclib/core/Client.h>
+#include <mclib/util/Forge.h>
 #include "PlayerListModel.h"
 
 namespace Ui {
@@ -12,41 +12,15 @@ class MainWindow;
 
 class MainWindow;
 
-class CircleMover : public QObject, public Minecraft::PlayerListener, public ClientListener {
-    Q_OBJECT
-
-signals:
-    void chatMessage(QString str);
-
-private:
-    Minecraft::PlayerManager* m_PlayerManager;
-    PlayerController* m_PlayerController;
-    bool m_InWorld;
-    s64 m_LastUpdate;
-    s64 m_StartTime;
-    Vector3d m_BasePosition;
-
-public:
-    CircleMover(Minecraft::PlayerManager* pm, PlayerController* pc, MainWindow* mw);
-
-    ~CircleMover();
-
-    void OnClientSpawn(Minecraft::PlayerPtr player);
-
-    void OnTick();
-
-    void Update();
-};
-
-class ChatHandler : public QObject, public Minecraft::Packets::PacketHandler {
+class ChatHandler : public QObject, public mc::protocol::packets::PacketHandler {
     Q_OBJECT
 
 public:
-    ChatHandler(Minecraft::Packets::PacketDispatcher* dispatcher, MainWindow* main);
+    ChatHandler(mc::protocol::packets::PacketDispatcher* dispatcher, MainWindow* main);
     ~ChatHandler();
 
-    void HandlePacket(Minecraft::Packets::Inbound::ChatPacket* packet);
-    void HandlePacket(Minecraft::Packets::Inbound::DisconnectPacket* packet);
+    void HandlePacket(mc::protocol::packets::in::ChatPacket* packet);
+    void HandlePacket(mc::protocol::packets::in::DisconnectPacket* packet);
 
 signals:
     void chatMessage(QString message);
@@ -54,20 +28,20 @@ private:
     MainWindow* m_Main;
 };
 
-class StatusHandler : public QObject, public Minecraft::Packets::PacketHandler {
+class StatusHandler : public QObject, public mc::protocol::packets::PacketHandler {
     Q_OBJECT
 
 public:
-    StatusHandler(Minecraft::Packets::PacketDispatcher* dispatcher, MainWindow* main);
+    StatusHandler(mc::protocol::packets::PacketDispatcher* dispatcher, MainWindow* main);
     ~StatusHandler();
 
-    void HandlePacket(Minecraft::Packets::Inbound::DisconnectPacket* packet);
+    void HandlePacket(mc::protocol::packets::in::DisconnectPacket* packet);
 
 signals:
     void statusUpdate(QString message);
 };
 
-class MainWindow : public QMainWindow, public Minecraft::ConnectionListener
+class MainWindow : public QMainWindow, public mc::core::ConnectionListener
 {
     Q_OBJECT
 
@@ -76,7 +50,7 @@ public:
     ~MainWindow();
 
 
-    void OnSocketStateChange(Network::Socket::Status newStatus);
+    void OnSocketStateChange(mc::network::Socket::Status newStatus);
     void OnLogin(bool success);
 
     int GetPageIndex() const;
@@ -101,9 +75,9 @@ public slots:
 private:
     void Login();
 
-    Client* m_Client;
-    Minecraft::Packets::PacketDispatcher m_Dispatcher;
-    std::shared_ptr<Minecraft::Forge::ForgeHandler> m_ForgeHandler;
+    mc::core::Client* m_Client;
+    mc::protocol::packets::PacketDispatcher m_Dispatcher;
+    std::shared_ptr<mc::util::ForgeHandler> m_ForgeHandler;
     PlayerListModel m_PlayerListModel;
     ChatHandler* m_ChatHandler;
     StatusHandler* m_StatusHandler;

@@ -40,7 +40,7 @@ unix:QMAKE_CXXFLAGS += -std=c++11
 
 win32:RC_ICONS += icons/mcqt256.ico icons/mcqt128.ico icons/mcqt64.ico icons/mcqt32.ico icons/mcqt16.ico
 
-INCLUDEPATH += $$PWD/lib/mclib
+INCLUDEPATH += $$PWD/lib/mclib/mclib/include
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/lib/mclib/Release/ -lmclib
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/lib/mclib/Debug/ -lmclibd
 else:unix: LIBS += -L$$PWD/lib/mclib/ -lmc

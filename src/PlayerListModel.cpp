@@ -13,15 +13,15 @@ void PlayerListModel::ForceRepaint() {
     endInsertRows();
 }
 
-void PlayerListModel::OnPlayerSpawn(Minecraft::PlayerPtr player) {
+void PlayerListModel::OnPlayerSpawn(mc::core::PlayerPtr player) {
     ForceRepaint();
 }
 
-void PlayerListModel::OnPlayerDestroy(Minecraft::PlayerPtr player, Minecraft::EntityId eid) {
+void PlayerListModel::OnPlayerDestroy(mc::core::PlayerPtr player, mc::EntityId eid) {
     ForceRepaint();
 }
 
-void PlayerListModel::OnPlayerJoin(Minecraft::PlayerPtr player) {
+void PlayerListModel::OnPlayerJoin(mc::core::PlayerPtr player) {
     static const std::vector<std::wstring> ignoreNames = {
         L"?tab", L"BTLP Slot"
     };
@@ -38,7 +38,7 @@ void PlayerListModel::OnPlayerJoin(Minecraft::PlayerPtr player) {
     endInsertRows();
 }
 
-void PlayerListModel::OnPlayerLeave(Minecraft::PlayerPtr player) {
+void PlayerListModel::OnPlayerLeave(mc::core::PlayerPtr player) {
     std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
     int index = m_Players.indexOf(player);
@@ -64,7 +64,7 @@ QVariant PlayerListModel::data(const QModelIndex &index, int role) const {
     static QColor yellow(255, 210, 100);
 
     if (role == Qt::DisplayRole || role == Qt::ForegroundRole || role == Qt::BackgroundRole) {
-        Minecraft::PlayerPtr player = m_Players.at(index.row());
+        mc::core::PlayerPtr player = m_Players.at(index.row());
 
         if (role == Qt::DisplayRole) {
             const std::wstring& name = player->GetName();
@@ -72,7 +72,7 @@ QVariant PlayerListModel::data(const QModelIndex &index, int role) const {
             return QString::fromStdWString(name);
         }
 
-        Minecraft::EntityPtr entity = player->GetEntity();
+        mc::entity::EntityPtr entity = player->GetEntity();
         if (entity) {
             if (role == Qt::BackgroundRole)
                 return yellow;
