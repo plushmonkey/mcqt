@@ -5,6 +5,7 @@
 #include <chrono>
 #include <sstream>
 #include "Settings.h"
+#include <mclib/util/Utility.h>
 
 s64 GetTime() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -68,7 +69,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_PlayerListModel(this),
     m_Client(nullptr)
 {
-    m_Client = new mc::core::Client(&m_Dispatcher, mc::protocol::Version::Minecraft_1_10_2);
+    m_Client = new mc::core::Client(&m_Dispatcher, mc::protocol::Version::Minecraft_1_11_2);
     m_Client->GetPlayerManager()->RegisterListener(&m_PlayerListModel);
     m_Client->GetConnection()->RegisterListener(this);
 
@@ -177,7 +178,7 @@ void MainWindow::Login() {
     Settings::GetInstance().SetUsername(username);
 
     {
-        mc::core::Client pingClient(&m_Dispatcher, mc::protocol::Version::Minecraft_1_10_2);
+        mc::core::Client pingClient(&m_Dispatcher, mc::protocol::Version::Minecraft_1_11_2);
         try {
             pingClient.Ping(host.toStdString(), port.toShort());
         } catch (const std::exception& e) {
