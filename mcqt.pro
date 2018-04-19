@@ -4,9 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
-
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT       += core gui widgets
 
 TARGET = mcqt
 TEMPLATE = app
@@ -47,5 +45,5 @@ else:unix: LIBS += -L$$PWD/lib/mclib/ -lmc
 
 INCLUDEPATH += $$PWD/lib/mclib/lib/jsoncpp/include
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/lib/mclib/lib/jsoncpp/lib/ -ljsoncpp-msvc-2017
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/lib/mclib/lib/jsoncpp/lib/ -ljsoncppd
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/lib/mclib/lib/jsoncpp/lib/ -ljsoncppd-msvc-2017
 #else:unix: LIBS += -ljsoncpp

@@ -3,8 +3,9 @@
 
 #include <QMainWindow>
 #include <mclib/core/Client.h>
-#include <mclib/util/Forge.h>
+#include <mclib/util/VersionFetcher.h>
 #include "PlayerListModel.h"
+#include <QtConcurrent/QtConcurrent>
 
 namespace Ui {
 class MainWindow;
@@ -67,6 +68,8 @@ private slots:
 signals:
     void changeStackedWidgetIndex(int index);
     void statusHide();
+    void enableLogin(bool enabled);
+    void statusUpdate(QString message);
 
 public slots:
     void appendChat(QString str);
@@ -75,9 +78,10 @@ public slots:
 private:
     void Login();
 
+    QFuture<void> m_PingWorker;
     mc::core::Client* m_Client;
     mc::protocol::packets::PacketDispatcher m_Dispatcher;
-    std::shared_ptr<mc::util::ForgeHandler> m_ForgeHandler;
+    std::unique_ptr<mc::util::VersionFetcher> m_VersionFetcher;
     PlayerListModel m_PlayerListModel;
     ChatHandler* m_ChatHandler;
     StatusHandler* m_StatusHandler;

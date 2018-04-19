@@ -69,12 +69,6 @@ MainWindow::MainWindow(QWidget *parent) :
     m_PlayerListModel(this),
     m_Client(nullptr)
 {
-    m_Client = new mc::core::Client(&m_Dispatcher, mc::protocol::Version::Minecraft_1_11_2);
-    m_Client->GetPlayerManager()->RegisterListener(&m_PlayerListModel);
-    m_Client->GetConnection()->RegisterListener(this);
-
-    m_ForgeHandler = std::make_shared<mc::util::ForgeHandler>(&m_Dispatcher, m_Client->GetConnection());
-
     m_ChatHandler = new ChatHandler(&m_Dispatcher, this);
     m_StatusHandler = new StatusHandler(&m_Dispatcher, this);
 
@@ -103,14 +97,21 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(this, SIGNAL(changeStackedWidgetIndex(int)), ui->stackedWidget, SLOT(setCurrentIndex(int)));
     connect(this, SIGNAL(statusHide()), ui->statusBar, SLOT(hide()));
+    connect(this, SIGNAL(enableLogin(bool)), ui->loginButton, SLOT(setEnabled(bool)));
+    connect(this, SIGNAL(statusUpdate(QString)), this, SLOT(updateStatus(QString)));
 }
 
 MainWindow::~MainWindow()
 {
-    m_Client->GetPlayerManager()->UnregisterListener(&m_PlayerListModel);
-    m_Client->GetConnection()->UnregisterListener(this);
+    if (m_Client) {
+        m_Client->GetPlayerManager()->UnregisterListener(&m_PlayerListModel);
+        m_Client->GetConnection()->UnregisterListener(this);
+
+        m_VersionFetcher.reset();
+        delete m_Client;
+    }
+
     delete m_ChatHandler;
-    delete m_Client;
     delete ui;
 }
 
@@ -121,8 +122,13 @@ int MainWindow::GetPageIndex() const {
 void MainWindow::OnSocketStateChange(mc::network::Socket::Status newStatus) {
     int page = ui->stackedWidget->currentIndex();
 
-    if (newStatus == mc::network::Socket::Status::Disconnected && page == 1)
-        emit appendChat("Disconnected from server.");
+    if (newStatus == mc::network::Socket::Status::Disconnected) {
+        if (page == 1) {
+            emit appendChat("Disconnected from server.");
+        }
+
+        emit enableLogin(true);
+    }
 }
 
 void MainWindow::OnLogin(bool success) {
@@ -144,6 +150,7 @@ void MainWindow::OnLogin(bool success) {
     } else {
         ui->statusBar->showMessage("Failed to login");
         m_Client->GetConnection()->Disconnect();
+        emit enableLogin(true);
     }
 }
 
@@ -170,6 +177,10 @@ void MainWindow::on_passwordEdit_returnPressed() {
 }
 
 void MainWindow::Login() {
+    if (!ui->loginButton->isEnabled()) {
+        return;
+    }
+
     QString username = ui->usernameEdit->text();
     QString password = ui->passwordEdit->text();
     QString host = ui->serverEdit->text();
@@ -177,31 +188,47 @@ void MainWindow::Login() {
 
     Settings::GetInstance().SetUsername(username);
 
-    {
-        mc::core::Client pingClient(&m_Dispatcher, mc::protocol::Version::Minecraft_1_11_2);
+    m_VersionFetcher = std::make_unique<mc::util::VersionFetcher>(host.toStdString(), port.toShort());
+
+    ui->statusBar->showMessage(QString("Pinging server.."));
+
+    ui->loginButton->setDisabled(true);
+
+    // This is ran on a separate thread to prevent the ui from blocking while pinging/logging in.
+    m_PingWorker = QtConcurrent::run([&](std::string host, u16 port, std::string username, std::string password) {
+        mc::protocol::Version version = mc::protocol::Version::Minecraft_1_11_2;
+
         try {
-            pingClient.Ping(host.toStdString(), port.toShort());
-        } catch (const std::exception& e) {
-            ui->statusBar->showMessage(QString(e.what()));
+            version = m_VersionFetcher->GetVersion();
+        } catch (std::exception& e) {
+            emit statusUpdate(QString(e.what()));
+            emit enableLogin(true);
             return;
         }
 
-        u64 start = GetTime();
-
-        while (!m_ForgeHandler->HasModInfo()) {
-            if (GetTime() - start > 10000) {
-                ui->statusBar->showMessage(QString("Timed out."));
-                return;
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        if (m_Client) {
+            m_Client->GetPlayerManager()->UnregisterListener(&m_PlayerListModel);
+            m_Client->GetConnection()->UnregisterListener(this);
         }
-    }
 
-    try {
-        m_Client->Login(host.toStdString(), port.toShort(), username.toStdString(), password.toStdString());
-    } catch (const std::exception& e) {
-        ui->statusBar->showMessage(QString(e.what()));
-    }
+        m_Client = new mc::core::Client(&m_Dispatcher, version);
+        m_Client->GetPlayerManager()->RegisterListener(&m_PlayerListModel);
+        m_Client->GetConnection()->RegisterListener(this);
+
+        m_VersionFetcher->GetForge().SetConnection(m_Client->GetConnection());
+
+        emit statusUpdate(QString("Logging in..."));
+
+        try {
+            m_Client->Login(host, port, username, password, mc::core::UpdateMethod::Threaded);
+        } catch (const std::exception& e) {
+            emit statusUpdate(QString(e.what()));
+            emit enableLogin(true);
+            return;
+        }
+
+        emit enableLogin(false);
+    }, host.toStdString(), port.toShort(), username.toStdString(), password.toStdString());
 }
 
 void MainWindow::on_settingsButton_clicked() {
